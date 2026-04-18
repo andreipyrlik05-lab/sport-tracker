@@ -1655,6 +1655,169 @@ const app = {
     }
 };
 
+// ===== ПРОСТОЙ ТАЙМЕР ОТДЫХА =====
+window.SimpleTimer = {
+    timers: {},
+    
+    create: function(setIndex, container) {
+        const timerId = `timer_${setIndex}_${Date.now()}`;
+        const timerHTML = `
+            <div class="set-timer" id="${timerId}">
+                <div class="set-timer-time" id="time_${timerId}">01:30</div>
+                <div class="set-timer-buttons">
+                    <button class="set-timer-btn" onclick="SimpleTimer.start('${timerId}', ${setIndex})">▶️</button>
+                    <button class="set-timer-btn" onclick="SimpleTimer.reset('${timerId}', ${setIndex})">🔄</button>
+                </div>
+                <div class="set-timer-presets">
+                    <button class="set-timer-preset" onclick="SimpleTimer.setTime('${timerId}', ${setIndex}, 60)">1м</button>
+                    <button class="set-timer-preset" onclick="SimpleTimer.setTime('${timerId}', ${setIndex}, 90)">1:30</button>
+                    <button class="set-timer-preset" onclick="SimpleTimer.setTime('${timerId}', ${setIndex}, 120)">2м</button>
+                </div>
+                <div class="timer-progress-bar">
+                    <div class="timer-progress-fill" id="progress_${timerId}"></div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', timerHTML);
+        
+        this.timers[timerId] = {
+            setIndex: setIndex,
+            totalTime: 90,
+            timeLeft: 90,
+            isRunning: false,
+            interval: null,
+            timerId: timerId
+        };
+        
+        return timerId;
+    },
+    
+    start: function(timerId, setIndex) {
+        const timer = this.timers[timerId];
+        if (!timer || timer.isRunning) return;
+        
+        timer.isRunning = true;
+        timer.interval = setInterval(() => {
+            timer.timeLeft--;
+            this.updateDisplay(timerId);
+            
+            if (timer.timeLeft <= 0) {
+                this.complete(timerId);
+            }
+        }, 1000);
+    },
+    
+    stop: function(timerId) {
+        const timer = this.timers[timerId];
+        if (timer && timer.interval) {
+            clearInterval(timer.interval);
+            timer.isRunning = false;
+            timer.interval = null;
+        }
+    },
+    
+    reset: function(timerId, setIndex) {
+        this.stop(timerId);
+        const timer = this.timers[timerId];
+        if (timer) {
+            timer.timeLeft = timer.totalTime;
+            this.updateDisplay(timerId);
+        }
+    },
+    
+    setTime: function(timerId, setIndex, seconds) {
+        this.stop(timerId);
+        const timer = this.timers[timerId];
+        if (timer) {
+            timer.totalTime = seconds;
+            timer.timeLeft = seconds;
+            this.updateDisplay(timerId);
+        }
+    },
+    
+    updateDisplay: function(timerId) {
+        const timer = this.timers[timerId];
+        if (!timer) return;
+        
+        const minutes = Math.floor(timer.timeLeft / 60);
+        const seconds = timer.timeLeft % 60;
+        const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        const timeEl = document.getElementById(`time_${timerId}`);
+        if (timeEl) timeEl.textContent = timeStr;
+        
+        const progressEl = document.getElementById(`progress_${timerId}`);
+        if (progressEl) {
+            const percent = ((timer.totalTime - timer.timeLeft) / timer.totalTime) * 100;
+            progressEl.style.width = `${percent}%`;
+            
+            if (timer.timeLeft <= 10) {
+                progressEl.style.background = '#ff0066';
+                if (timeEl) timeEl.style.color = '#ff0066';
+            } else if (timer.timeLeft <= 30) {
+                progressEl.style.background = '#ffaa00';
+                if (timeEl) timeEl.style.color = '#ffaa00';
+            } else {
+                progressEl.style.background = '#00cc66';
+                if (timeEl) timeEl.style.color = '#00cc66';
+            }
+        }
+    },
+    
+    complete: function(timerId) {
+        this.stop(timerId);
+        if (typeof app !== 'undefined' && app.showNotification) {
+            app.showNotification('⏱️ Время отдыха закончилось!', 'info');
+        }
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = 800;
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        } catch(e) {}
+    },
+    
+    addToSet: function(setIndex, container) {
+        return this.create(setIndex, container);
+    }
+};
+
+// Автоматически добавляем таймер при завершении подхода
+// Переопределяем функцию addSet, чтобы после добавления подхода создавался таймер
+const originalAddSet = app.addSet;
+app.addSet = function() {
+    originalAddSet.call(this);
+    setTimeout(() => {
+        const setsContainer = document.getElementById('setsContainer');
+        const setElements = setsContainer.querySelectorAll('.set-container');
+        const lastSet = setElements[setElements.length - 1];
+        if (lastSet && !lastSet.querySelector('.set-timer')) {
+            SimpleTimer.create(setElements.length - 1, lastSet);
+        }
+    }, 50);
+};
+
+// Добавляем кнопку "Таймер" в каждый существующий подход
+const originalRenderSets = app.renderSets;
+app.renderSets = function() {
+    originalRenderSets.call(this);
+    setTimeout(() => {
+        const setsContainer = document.getElementById('setsContainer');
+        const setElements = setsContainer.querySelectorAll('.set-container');
+        setElements.forEach((el, idx) => {
+            if (!el.querySelector('.set-timer')) {
+                SimpleTimer.create(idx, el);
+            }
+        });
+    }, 50);
+};
+
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', () => {
     app.init();

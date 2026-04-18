@@ -1103,4 +1103,123 @@ body {
         padding: 10px;
         font-size: 14px;
     }
+
+    /* Таймер отдыха */
+    .set-timer {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.set-timer-time {
+    font-size: 22px;
+    font-weight: bold;
+    font-family: monospace;
+    color: var(--success);
+    min-width: 70px;
+    text-align: center;
+}
+
+.set-timer-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.set-timer-btn {
+    background: var(--bg-secondary);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.set-timer-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.set-timer-presets {
+    display: flex;
+    gap: 6px;
+}
+
+.set-timer-preset {
+    background: var(--bg-secondary);
+    border: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.set-timer-preset:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.timer-progress-bar {
+    height: 3px;
+    background: var(--border-color);
+    border-radius: 3px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.timer-progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--success);
+    transition: width 0.1s linear;
+}
+/* Адаптация таймера для мобильных устройств */
+@media (max-width: 768px) {
+    .set-timer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .set-timer-time {
+        font-size: 28px;
+        text-align: center;
+    }
+    
+    .set-timer-buttons {
+        justify-content: center;
+        gap: 15px;
+    }
+    
+    .set-timer-btn {
+        padding: 10px 20px;
+        font-size: 18px;
+        min-width: 60px;
+    }
+    
+    .set-timer-presets {
+        justify-content: center;
+        gap: 12px;
+    }
+    
+    .set-timer-preset {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+    
+    .timer-progress-bar {
+        margin-top: 12px;
+        height: 6px;
+    }
+}
+
 }
